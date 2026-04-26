@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CreatorDApp</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f0f0f; color: #f0f0f0; min-height: 100vh; }
+    header { background: #1a1a1a; border-bottom: 1px solid #2a2a2a; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .logo { font-size: 1.3rem; font-weight: 700; color: #a78bfa; }
+    .wallet-btn { background: #7c3aed; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; }
+    .wallet-btn:hover { background: #6d28d9; }
+    .wallet-info { font-size: 0.82rem; color: #a78bfa; background: #1e1b2e; padding: 8px 14px; border-radius: 8px; border: 1px solid #4c1d95; }
+    main { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+    .hero { text-align: center; margin-bottom: 36px; }
+    .hero h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+    .hero p { color: #888; font-size: 1rem; }
+    .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 16px; color: #a78bfa; }
+    label { display: block; font-size: 0.78rem; color: #888; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+    input, textarea { width: 100%; background: #0f0f0f; border: 1px solid #2a2a2a; color: #f0f0f0; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; font-family: inherit; margin-bottom: 14px; outline: none; resize: none; }
+    input:focus, textarea:focus { border-color: #7c3aed; }
+    .amounts { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .amt { padding: 6px 14px; border-radius: 20px; border: 1px solid #2a2a2a; background: transparent; color: #ccc; font-size: 0.8rem; cursor: pointer; }
+    .amt:hover, .amt.active { border-color: #7c3aed; color: #a78bfa; }
+    .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+    .btn-purple { background: #7c3aed; color: white; }
+    .btn-purple:hover { background: #6d28d9; }
+    .btn-outline { background: transparent; color: #a78bfa; border: 1px solid #7c3aed; }
+    .btn-outline:hover { background: #1e1b2e; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .status { margin-top: 10px; padding: 10px 14px; border-radius: 8px; font-size: 0.85rem; display: none; }
+    .status.success { background: #052e16; color: #4ade80; border: 1px solid #166534; display: block; }
+    .status.error   { background: #2d0a0a; color: #f87171; border: 1px solid #7f1d1d; display: block; }
+    .status.pending { background: #1c1208; color: #fbbf24; border: 1px solid #78350f; display: block; }
+    .msg-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+    .msg { background: #0f0f0f; border: 1px solid #2a2a2a; border-radius: 10px; padding: 14px; }
+    .msg-header { display: flex; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; gap: 4px; }
+    .msg-author { font-size: 0.75rem; color: #a78bfa; font-family: monospace; }
+    .msg-tip { font-size: 0.72rem; color: #4ade80; background: #052e16; padding: 2px 8px; border-radius: 10px; }
+    .msg-time { font-size: 0.72rem; color: #555; }
+    .msg-text { font-size: 0.92rem; line-height: 1.6; }
+    .empty { text-align: center; color: #555; padding: 30px 0; font-size: 0.9rem; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .stat { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 10px; padding: 16px; text-align: center; }
+    .stat-val { font-size: 1.4rem; font-weight: 700; color: #a78bfa; }
+    .stat-lbl { font-size: 0.75rem; color: #666; margin-top: 4px; }
+    .notice { background: #1c1208; border: 1px solid #78350f; border-radius: 8px; padding: 12px 16px; font-size: 0.82rem; color: #fbbf24; margin-bottom: 20px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CreatorDApp</div>
+  <div id="walletArea">
+    <button class="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <h1>Support Creators On-Chain</h1>
+    <p>Send ETH tips and post permanent messages on the blockchain.</p>
+  </div>
+
+  <div class="notice" id="demoNotice">
+    ⚠ Demo mode — contract not connected yet. Wallet connection and ETH transfers still work.
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val" id="statTips">—</div>
+      <div class="stat-lbl">Total Tips (ETH)</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="statMsgs">—</div>
+      <div class="stat-lbl">Messages Posted</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>⚡ Send a Tip</h2>
+    <label>Creator Wallet Address</label>
+    <input id="creatorAddr" placeholder="0x... (paste the creator's address)" />
+    <label>Quick Amounts</label>
+    <div class="amounts">
+      <button class="amt" onclick="pickAmt('0.001',this)">0.001 ETH</button>
+      <button class="amt" onclick="pickAmt('0.005',this)">0.005 ETH</button>
+      <button class="amt" onclick="pickAmt('0.01', this)">0.01 ETH</button>
+    </div>
+    <label>Amount (ETH)</label>
+    <input id="tipAmt" type="number" placeholder="0.001" step="0.001" min="0.0001"/>
+    <label>Your Message</label>
+    <textarea id="tipMsg" rows="3" placeholder="Write something to the creator..." maxlength="280"></textarea>
+    <button class="btn btn-purple" id="tipBtn" onclick="sendTip()" disabled>Connect wallet to tip</button>
+    <div class="status" id="tipStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>📝 Post a Free Message</h2>
+    <label>Your Message (stored permanently on blockchain)</label>
+    <textarea id="freeMsg" rows="3" placeholder="Say something for the blockchain..." maxlength="280"></textarea>
+    <button class="btn btn-outline" id="msgBtn" onclick="postFreeMessage()" disabled>Connect wallet to post</button>
+    <div class="status" id="msgStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>🔗 On-Chain Messages</h2>
+    <div class="msg-list" id="msgList">
+      <div class="empty">No messages yet. Be the first to post!</div>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<script>
+  const CONTRACT_ADDRESS = "YOUR_CONTRACT_ADDRESS_HERE";
+
+  const ABI = [
+    "function sendTip(string memory text) public payable",
+    "function postMessage(string memory text) public",
+    "function getAllMessages() public view returns (tuple(address author, string text, uint256 tipAmount, uint256 timestamp)[])",
+    "function getCreatorInfo() public view returns (address, string, uint256, uint256)"
+  ];
+
+  let provider, signer, contract, userAddress;
+
+  async function connectWallet() {
+    if (!window.ethereum) { alert("MetaMask not found. Install it from metamask.io"); return; }
+    try {
+      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+      userAddress = accounts[0];
+      provider    = new ethers.BrowserProvider(window.ethereum);
+      signer      = await provider.getSigner();
+
+      document.getElementById("walletArea").innerHTML =
+        `<div class="wallet-info">✓ ${userAddress.slice(0,6)}...${userAddress.slice(-4)}</div>`;
+
+      document.getElementById("tipBtn").disabled = false;
+      document.getElementById("tipBtn").textContent = "Send Tip";
+      document.getElementById("msgBtn").disabled = false;
+      document.getElementById("msgBtn").textContent = "Post Message";
+
+      if (CONTRACT_ADDRESS !== "YOUR_CONTRACT_ADDRESS_HERE") {
+        contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+        document.getElementById("demoNotice").style.display = "none";
+        await loadStats();
+        await loadMessages();
+      }
+    } catch(e) {
+      alert("Could not connect: " + e.message);
+    }
+  }
+
+  async function sendTip() {
+    const to  = document.getElementById("creatorAddr").value.trim();
+    const amt = document.getElementById("tipAmt").value.trim();
+    const msg = document.getElementById("tipMsg").value.trim();
+
+    if (!userAddress) return showStatus("tipStatus","error","Connect your wallet first.");
+    if (!to || !ethers.isAddress(to)) return showStatus("tipStatus","error","Enter a valid creator address.");
+    if (!amt || parseFloat(amt) <= 0) return showStatus("tipStatus","error","Enter a tip amount.");
+    if (!msg) return showStatus("tipStatus","error","Add a message with your tip.");
+
+    showStatus("tipStatus","pending","⏳ Waiting for MetaMask...");
+    try {
+      if (contract && CONTRACT_ADDRESS !== "YOUR_CONTRACT_ADDRESS_HERE") {
+        const tx = await contract.sendTip(msg, { value: ethers.parseEther(amt) });
+        showStatus("tipStatus","pending","⏳ Confirming on blockchain...");
+        await tx.wait();
+        showStatus("tipStatus","success",`✓ Tip of ${amt} ETH sent! TX: ${tx.hash.slice(0,12)}...`);
+        await loadStats();
+        await loadMessages();
+      } else {
+        const tx = await signer.sendTransaction({ to, value: ethers.parseEther(amt) });
+        await tx.wait();
+        showStatus("tipStatus","success",`✓ Tip of ${amt} ETH sent!`);
+        addMsgToBoard({ author: userAddress, text: msg, tipAmount: ethers.parseEther(amt), timestamp: BigInt(Math.floor(Date.now()/1000)) }, true);
+      }
+    } catch(e) {
+      showStatus("tipStatus","error","✗ " + (e.code === "ACTION_REJECTED" ? "Transaction rejected." : e.message.slice(0,80)));
+    }
+  }
+
+  async function postFreeMessage() {
+    const text = document.getElementById("freeMsg").value.trim();
+    if (!userAddress) return showStatus("msgStatus","error","Connect your wallet first.");
+    if (!text)        return showStatus("msgStatus","error","Message cannot be empty.");
+
+    showStatus("msgStatus","pending","⏳ Posting...");
+    try {
+      if (contract && CONTRACT_ADDRESS !== "YOUR_CONTRACT_ADDRESS_HERE") {
+        const tx = await contract.postMessage(text);
+        await tx.wait();
+        showStatus("msgStatus","success","✓ Message posted on-chain!");
+        await loadMessages();
+      } else {
+        await new Promise(r => setTimeout(r, 800));
+        addMsgToBoard({ author: userAddress, text, tipAmount: 0n, timestamp: BigInt(Math.floor(Date.now()/1000)) }, true);
+        showStatus("msgStatus","success","✓ Message posted! (demo mode)");
+        document.getElementById("freeMsg").value = "";
+      }
+    } catch(e) {
+      showStatus("msgStatus","error","✗ " + e.message.slice(0,80));
+    }
+  }
+
+  async function loadStats() {
+    if (!contract) return;
+    try {
+      const info = await contract.getCreatorInfo();
+      document.getElementById("statTips").textContent = parseFloat(ethers.formatEther(info[2])).toFixed(4);
+      document.getElementById("statMsgs").textContent = info[3].toString();
+    } catch(e) {}
+  }
+
+  async function loadMessages() {
+    if (!contract) return;
+    try {
+      const msgs = await contract.getAllMessages();
+      const list = document.getElementById("msgList");
+      list.innerHTML = "";
+      if (msgs.length === 0) { list.innerHTML = '<div class="empty">No messages yet.</div>'; return; }
+      [...msgs].reverse().forEach(m => addMsgToBoard(m, false));
+    } catch(e) {}
+  }
+
+  function addMsgToBoard(m, prepend) {
+    const list  = document.getElementById("msgList");
+    const empty = list.querySelector(".empty");
+    if (empty) empty.remove();
+
+    const tipEth = typeof m.tipAmount === "bigint"
+      ? parseFloat(ethers.formatEther(m.tipAmount))
+      : parseFloat(m.tipAmount) / 1e18;
+
+    const el = document.createElement("div");
+    el.className = "msg";
+    el.innerHTML = `
+      <div class="msg-header">
+        <span class="msg-author">${m.author.slice(0,6)}...${m.author.slice(-4)}</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          ${tipEth > 0 ? `<span class="msg-tip">⚡ ${tipEth.toFixed(4)} ETH</span>` : ""}
+          <span class="msg-time">${timeAgo(Number(m.timestamp))}</span>
+        </div>
+      </div>
+      <div class="msg-text">${escHtml(m.text)}</div>`;
+    if (prepend) list.insertBefore(el, list.firstChild);
+    else list.appendChild(el);
+  }
+
+  function pickAmt(val, el) {
+    document.getElementById("tipAmt").value = val;
+    document.querySelectorAll(".amt").forEach(a => a.classList.remove("active"));
+    el.classList.add("active");
+  }
+
+  function showStatus(id, type, msg) {
+    const el = document.getElementById(id);
+    el.className = "status " + type;
+    el.textContent = msg;
+  }
+
+  function timeAgo(ts) {
+    const s = Math.floor(Date.now()/1000 - ts);
+    if (s < 60)    return s + "s ago";
+    if (s < 3600)  return Math.floor(s/60) + "m ago";
+    if (s < 86400) return Math.floor(s/3600) + "h ago";
+    return Math.floor(s/86400) + "d ago";
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+</script>
+</body>
+</html>
